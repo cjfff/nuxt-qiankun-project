@@ -7,8 +7,9 @@
     </div>
     <div class="menu-wrap">
       <ul>
-        <li v-for="app in apps" :key="app.name">
-          <nuxt-link :to="app.activeRule">{{app.name}}</nuxt-link>
+        <li v-for="item in mens" :key="item.name" @click="handleRoute(item)">
+          <!-- <nuxt-link :to="item.to">{{item.name}}</nuxt-link> -->
+          <span>{{item.name}}</span>
         </li>
       </ul>
     </div>
@@ -20,30 +21,66 @@
 
 <script>
 import { mapState } from 'vuex'
-import {
-  registerMicroApps,
-  start,
-  setDefaultMountApp,
-} from 'qiankun'
+import { microAppLoaderMixin } from '@/mixins/micro-app-loader-mixin'
 export default {
   data() {
     return {
       value: '',
+      appMap: {}
     }
   },
+  mixins: [microAppLoaderMixin],
   mounted() {
     this.init()
   },
   computed: {
     ...mapState(['apps', 'sdk']),
+    mens() {
+      return [].concat(
+        this.apps.map((item) => ({
+          ...item,
+          to: item.activeRule,
+        })),
+        {
+          name: 'nuxtHomePage',
+          to: '/home',
+        },
+        {
+          name: 'nuxtAboutPage',
+          to: '/about',
+        }
+      )
+    },
   },
   methods: {
     async init() {
       // 注册所有子应用
-      registerMicroApps(this.apps)
 
-      // 启动
-      start()
+      let appMap = {}
+
+      this.apps.forEach(item => {
+        appMap[item.activeRule] = item
+      })
+
+      this.appMap = appMap
+
+      // 加载首次进来匹配到的路由
+      const config = this.appMap[this.$route.path]
+
+      config && this.loadApp(config)
+
+      this.prefetchApps(this.apps)
+    },
+    handleRoute(item) {
+      const appConfig = this.appMap[item.to]
+
+      // 如果能取出 config 则加载子应用
+      if (appConfig) {
+        this.loadApp(appConfig)
+      }
+
+      // 跳转路由
+      this.$router.push(item.to)
     },
 
     handleChange() {
