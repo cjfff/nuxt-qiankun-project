@@ -1,43 +1,41 @@
 import Vue from "vue";
+import store from "@/store";
 
-export const createInject = app => (key, value) => {
+export const inject = function(key, value) {
   if (!key) {
     throw new Error("inject(key, value) has no key provided");
   }
   if (value === undefined) {
-    throw new Error(`inject('${key}', value) has no value provided`);
+    throw new Error("inject(key, value) has no value provided");
   }
 
   key = "$" + key;
   // Add into app
-  app[key] = value;
-  // Add into context
-  if (!app.context[key]) {
-    app.context[key] = value;
-  }
-
+  // app[key] = value
+  // Add into store
+  store[key] = value;
   // Check if plugin not already installed
-  const installKey = "__vue_" + key + "_installed__";
+  const installKey = "__development_panel_" + key + "_installed__";
   if (Vue[installKey]) {
     return;
   }
   Vue[installKey] = true;
   // Call Vue.use() to install the plugin into vm
   Vue.use(() => {
-    if (!Object.prototype.hasOwnProperty.call(Vue.prototype, key)) {
+    if (!Object.prototype.hasOwnProperty.call(Vue, key)) {
       Object.defineProperty(Vue.prototype, key, {
         get() {
-          return this.$root.$options[key];
+          return value;
         },
       });
     }
   });
 };
 
-export const excutePlugins = (
-  { app, store, router },
-  inject
-) => async plugins => {
+export const excutePlugins = async (
+  plugins,
+  { app, store, router, inject }
+) => {
   for (const key in plugins) {
     const plugin = plugins[key];
     if (typeof plugin === "function") {
@@ -48,7 +46,9 @@ export const excutePlugins = (
 
         console.timeEnd(`plugin ${key}`);
       } catch (error) {
-        console.log(error);
+        console.group(plugin.name);
+        console.error(error);
+        console.groupEnd(plugin.name);
       }
     }
   }
@@ -56,8 +56,18 @@ export const excutePlugins = (
 
 export const sleep = time => new Promise(resolve => setTimeout(resolve, time));
 
-export const resolveMenus = apps => {
-  return apps.map(item => {
-    return item;
-  });
+export const executeMiddlewares = (middlewares, context) => {
+  return async (from, to, next) => {
+    for (let i = 0; i < middlewares.length; i++) {
+      const middleware = middlewares[i];
+      try {
+        await middleware({ ...context, route: from });
+      } catch (error) {
+        console.group(middleware.name);
+        console.error(error);
+        console.groupEnd(middleware.name);
+      }
+    }
+    next();
+  };
 };

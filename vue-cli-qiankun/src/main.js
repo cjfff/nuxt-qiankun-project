@@ -2,8 +2,9 @@ import Vue from "vue";
 import App from "./App.vue";
 import router from "./router";
 import store from "./store";
-import { createInject, excutePlugins } from "@/utils";
+import { inject, excutePlugins, executeMiddlewares } from "@/utils";
 import * as plugins from "@/plugins";
+import middlewares from "@/middlewares";
 import ElementUI from "element-ui";
 import "element-ui/lib/theme-chalk/index.css";
 
@@ -18,11 +19,18 @@ async function createApp() {
     render: h => h(App),
   });
 
+  const context = {
+    context: app,
+    store,
+    router,
+    inject,
+  };
+
   store.$router = router;
 
-  const inject = createInject(app);
+  router.beforeEach(executeMiddlewares(middlewares, context));
 
-  await excutePlugins({ store, router, app }, inject)(plugins);
+  await excutePlugins(plugins, context);
 
   app.$mount("#app");
 }
