@@ -10,18 +10,19 @@
 export default {
   methods: {
     go2about() {
-      this.$router.push({ name: 'About'})
+      this.$router.push({ name: "About" });
     },
     toast() {
-      this.$sdk && this.$sdk.toast({
-        message: '来自 nuxt 触发的 toast',
-        type: 'success'
-      })
-    }
-  }
-}
+      console.log(this.$sdk);
+      this.$sdk &&
+        this.$sdk.toast({
+          message: "来自 nuxt 触发的 toast",
+          type: "success",
+        });
+    },
+  },
+};
 </script>
 
 <style>
-
 </style>

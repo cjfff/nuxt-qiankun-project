@@ -1,8 +1,8 @@
 <template>
   <div class="home">
     <div>vue-app</div>
-    <div>global state name {{name}}</div>
-    <el-button>update global state to parent</el-button>
+    <div>global state userInfo {{userInfo}}</div>
+    <el-button @click="handleGetInfo">getUserInfo</el-button>
     <el-button @click="$router.push({name: 'About'})">go2About</el-button>
     <br />
     <img src="../assets/logo.png" alt />
@@ -10,14 +10,20 @@
 </template>
 
 <script>
-import { mapMutations, mapState } from "vuex";
+import { mapState } from "vuex";
+
 export default {
   name: "Home",
+  data: () => ({
+    userInfo: {}
+  }),
   computed: {
     ...mapState(["name"])
   },
   methods: {
-    ...mapMutations(["updateParentState"])
+    handleGetInfo() {
+      this.userInfo = this.$sdk.getUserInfo();
+    }
   }
 };
 </script>
